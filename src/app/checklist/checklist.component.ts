@@ -5,7 +5,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {ChecklistHeaderComponent} from './ui/checklist-header.component';
 import {ChecklistItemService} from './data-access/checklist-item.service';
 import {FormBuilder} from '@angular/forms';
-import {ChecklistItem} from '../shared/interfaces/checklist-item';
+import {ChecklistItem} from '../shared/interfaces';
 import {ModalComponent} from '../shared/ui/modal.component';
 import {FormModalComponent} from '../shared/ui/form-modal.component';
 import {ChecklistItemListComponent} from './ui/checklist-item-list.component';
@@ -23,9 +23,13 @@ import {ChecklistItemListComponent} from './ui/checklist-item-list.component';
       <app-checklist-header
         [checklist]="checklist"
         (addItem)="checklistItemBeingEdited.set({})"
+        (resetChecklist)="checklistItemService.reset$.next($event)"
       />
 
-      <app-checklist-item-list [checklistItems]="items()"/>
+      <app-checklist-item-list
+        [checklistItems]="items()"
+        (toggle)="checklistItemService.toggle$.next($event)"
+      />
     }
 
     <app-modal [isOpen]="!!checklistItemBeingEdited()">

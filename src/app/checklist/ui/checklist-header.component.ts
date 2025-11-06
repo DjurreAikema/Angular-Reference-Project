@@ -1,5 +1,5 @@
 import {Component, input, output} from '@angular/core';
-import {Checklist} from '../../shared/interfaces';
+import {Checklist, RemoveChecklist} from '../../shared/interfaces';
 import {RouterLink} from '@angular/router';
 
 @Component({
@@ -16,6 +16,7 @@ import {RouterLink} from '@angular/router';
       </h1>
 
       <div>
+        <button (click)="resetChecklist.emit(checklist().id)">Reset list</button>
         <button (click)="addItem.emit()">Add item</button>
       </div>
     </header>
@@ -25,4 +26,5 @@ export class ChecklistHeaderComponent {
   checklist = input.required<Checklist>();
 
   addItem = output();
+  resetChecklist = output<RemoveChecklist>();
 }
