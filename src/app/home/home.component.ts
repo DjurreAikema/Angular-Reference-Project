@@ -31,32 +31,50 @@ import {ChecklistListComponent} from './ui/checklist-list.component';
           "
           [formGroup]="checklistForm"
           (close)="checklistBeingEdited.set(null)"
-          (save)="checklistService.add$.next(checklistForm.getRawValue())"
+          (save)="
+            checklistBeingEdited()?.id
+              ? checklistService.edit$.next({
+                  id: checklistBeingEdited()!.id!,
+                  data: checklistForm.getRawValue()
+                })
+              : checklistService.add$.next(checklistForm.getRawValue())
+          "
         />
       </ng-template>
     </app-modal>
 
     <section>
       <h2>Your checklists</h2>
-      <app-checklist-list [checklists]="checklistService.checklists()"/>
+      <app-checklist-list
+        [checklists]="checklistService.checklists()"
+        (edit)="checklistBeingEdited.set($event)"
+        (remove)="checklistService.remove$.next($event)"
+      />
     </section>
   `
 })
 export default class HomeComponent {
+  // --- Dependencies
   formBuilder = inject(FormBuilder);
   checklistService = inject(ChecklistService);
 
+  // --- Properties
   checklistBeingEdited = signal<Partial<Checklist> | null>(null);
 
   checklistForm = this.formBuilder.nonNullable.group({
     title: [''],
   });
 
+  // --- Constructor
   constructor() {
     effect(() => {
       const checklist = this.checklistBeingEdited();
       if (!checklist) {
         this.checklistForm.reset();
+      } else {
+        this.checklistForm.patchValue({
+          title: checklist.title
+        })
       }
     });
   }

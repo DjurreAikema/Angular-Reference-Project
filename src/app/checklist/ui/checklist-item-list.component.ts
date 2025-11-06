@@ -15,6 +15,8 @@ import {ChecklistItem, RemoveChecklistItem} from '../../shared/interfaces';
               {{ item.title }}
             </div>
             <div>
+              <button (click)="edit.emit(item)">Edit</button>
+              <button (click)="remove.emit(item.id)">Delete</button>
               <button (click)="toggle.emit(item.id)">Toggle</button>
             </div>
           </li>
@@ -31,5 +33,7 @@ import {ChecklistItem, RemoveChecklistItem} from '../../shared/interfaces';
 export class ChecklistItemListComponent {
   checklistItems = input.required<ChecklistItem[]>();
 
+  edit = output<ChecklistItem>();
+  remove = output<RemoveChecklistItem>();
   toggle = output<RemoveChecklistItem>();
 }

@@ -1,5 +1,5 @@
 import {computed, effect, inject, Injectable, signal} from '@angular/core';
-import {AddChecklistItem, ChecklistItem, RemoveChecklistItem} from '../../shared/interfaces';
+import {AddChecklistItem, ChecklistItem, EditChecklistItem, RemoveChecklistItem} from '../../shared/interfaces';
 import {Subject} from 'rxjs';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {RemoveChecklist} from '../../shared/interfaces';
@@ -30,8 +30,12 @@ export class ChecklistItemService {
 
   // --- Sources
   add$ = new Subject<AddChecklistItem>();
+  edit$ = new Subject<EditChecklistItem>();
+  remove$ = new Subject<RemoveChecklistItem>();
   toggle$ = new Subject<RemoveChecklistItem>();
   reset$ = new Subject<RemoveChecklist>();
+
+  checklistRemoved$ = new Subject<RemoveChecklist>()
 
   private checklistItemsLoaded$ = this.storageService.loadChecklistItems();
 
@@ -50,6 +54,28 @@ export class ChecklistItemService {
             checked: false
           }
         ]
+      }))
+    );
+
+    // edit$ reducer
+    this.edit$.pipe(takeUntilDestroyed()).subscribe((update) =>
+      this.state.update((state) => ({
+        ...state,
+        checklistItems: state.checklistItems.map((item) =>
+          item.id === update.id
+            ? {...item, title: update.data.title}
+            : item
+        )
+      }))
+    );
+
+    // remove$ reducer
+    this.remove$.pipe(takeUntilDestroyed()).subscribe((id) =>
+      this.state.update((state) => ({
+        ...state,
+        checklistItems: state.checklistItems.filter(
+          (item) => item.id !== id
+        )
       }))
     );
 
@@ -74,6 +100,16 @@ export class ChecklistItemService {
             ? {...item, checked: false}
             : item
         )
+      }))
+    );
+
+    // checklistRemoved$ reducer
+    this.checklistRemoved$.pipe(takeUntilDestroyed()).subscribe((checklistId) =>
+      this.state.update((state) => ({
+        ...state,
+        checklistItems: state.checklistItems.filter(
+          (item) => item.checklistId !== checklistId
+        ),
       }))
     );
 
