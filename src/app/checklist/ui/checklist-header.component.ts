@@ -20,7 +20,14 @@ import {RouterLink} from '@angular/router';
         <button (click)="addItem.emit()">Add item</button>
       </div>
     </header>
-  `
+  `,
+  styles: [
+    `
+      button {
+        margin-left: 1rem;
+      }
+    `,
+  ]
 })
 export class ChecklistHeaderComponent {
   checklist = input.required<Checklist>();
