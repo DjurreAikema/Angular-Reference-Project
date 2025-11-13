@@ -65,6 +65,7 @@ export default class HomeComponent {
 
   // --- Constructor
   constructor() {
+    // Reset or fill checklistForm
     effect(() => {
       const checklist = this.checklistBeingEdited();
       if (!checklist) {

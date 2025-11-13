@@ -1,56 +1,167 @@
-import {computed, effect, inject, Injectable, signal} from '@angular/core';
+import {computed, inject, Injectable, signal} from '@angular/core';
 import {AddChecklistItem, ChecklistItem, EditChecklistItem, RemoveChecklistItem} from '../../shared/interfaces';
-import {catchError, EMPTY, map, merge, Subject} from 'rxjs';
+import {catchError, EMPTY, map, merge, Observable, Subject, switchMap} from 'rxjs';
 import {RemoveChecklist} from '../../shared/interfaces';
-import {StorageService} from '../../shared/data-access/storage.service';
 import {connect} from 'ngxtension/connect';
+import {HttpClient} from '@angular/common/http';
+import {ApiService} from '../../shared/data-access/api.service';
 
 export interface ChecklistItemsState {
   checklistItems: ChecklistItem[];
   loaded: boolean;
   error: string | null;
+  currentChecklistId: string | null;
+}
+
+interface ChecklistItemDto {
+  id: string;
+  checklistId: string;
+  title: string;
+  checked: boolean;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChecklistItemService {
-  storageService = inject(StorageService);
+  private _http = inject(HttpClient);
+  private _api = inject(ApiService);
 
   // --- State
   private state = signal<ChecklistItemsState>({
     checklistItems: [],
     loaded: false,
-    error: null
+    error: null,
+    currentChecklistId: null
   });
 
   // --- Selectors
   checklistItems = computed(() => this.state().checklistItems);
   loaded = computed(() => this.state().loaded);
+  error = computed(() => this.state().error);
+  currentChecklistId = computed(() => this.state().currentChecklistId);
 
   // --- Sources
+  checklistId$ = new Subject<string>();
+
   add$ = new Subject<AddChecklistItem>();
   edit$ = new Subject<EditChecklistItem>();
   remove$ = new Subject<RemoveChecklistItem>();
   toggle$ = new Subject<RemoveChecklistItem>();
   reset$ = new Subject<RemoveChecklist>();
 
-  checklistRemoved$ = new Subject<RemoveChecklist>()
-
   private error$ = new Subject<string>();
-  private checklistItemsLoaded$ = this.storageService.loadChecklistItems().pipe(
-    catchError((err) => {
-      this.error$.next(err);
-      return EMPTY;
-    })
+
+  private itemsLoaded$: Observable<{ items: ChecklistItem[], checklistId: string }> = this.checklistId$.pipe(
+    switchMap(checklistId =>
+      this._http.get<ChecklistItemDto[]>(
+        this._api.getUrl(`/checklists/${checklistId}/items`)
+      ).pipe(
+        map(dtos => ({
+          items: dtos.map(dto => ({
+            id: dto.id,
+            checklistId: dto.checklistId,
+            title: dto.title,
+            checked: dto.checked
+          })),
+          checklistId
+        })),
+        catchError(err => {
+          this.error$.next(err.message || "Failed to load checklist items");
+          return EMPTY;
+        })
+      )
+    )
+  );
+
+  private itemAdded$: Observable<ChecklistItem> = this.add$.pipe(
+    switchMap(({item, checklistId}) =>
+      this._http.post<ChecklistItemDto>(
+        this._api.getUrl(`/checklists/${checklistId}/items`),
+        {title: item.title}
+      ).pipe(
+        map(dto => ({
+          id: dto.id,
+          checklistId: dto.checklistId,
+          title: dto.title,
+          checked: dto.checked
+        })),
+        catchError(err => {
+          this.error$.next(err.message || "Failed to add item");
+          return EMPTY;
+        })
+      )
+    )
+  );
+
+  private itemEdited$: Observable<{ id: string; title: string }> = this.edit$.pipe(
+    switchMap(update =>
+      this._http.put<ChecklistItemDto>(
+        this._api.getUrl(`/items/${update.id}`),
+        {title: update.data.title}
+      ).pipe(
+        map(dto => ({
+          id: dto.id,
+          title: dto.title
+        })),
+        catchError(err => {
+          this.error$.next(err.message || "Failed to edit item");
+          return EMPTY;
+        })
+      )
+    )
+  );
+
+  private itemToggled$: Observable<string> = this.toggle$.pipe(
+    switchMap(id =>
+      this._http.patch<ChecklistItemDto>(
+        this._api.getUrl(`/items/${id}/toggle`), {}
+      ).pipe(
+        map(dto => dto.id),
+        catchError(err => {
+          this.error$.next(err.message || "Failed to toggle item");
+          return EMPTY;
+        })
+      )
+    )
+  );
+
+  private itemRemoved$: Observable<string> = this.remove$.pipe(
+    switchMap(id =>
+      this._http.delete(
+        this._api.getUrl(`/items/${id}`)
+      ).pipe(
+        map(() => id),
+        catchError(err => {
+          this.error$.next(err.message || "Failed to delete item");
+          return EMPTY;
+        })
+      )
+    )
+  );
+
+  private itemReset$: Observable<string> = this.reset$.pipe(
+    switchMap(checklistId =>
+      this._http.patch(
+        this._api.getUrl(`/checklists/${checklistId}/reset`), {}
+      ).pipe(
+        map(() => checklistId),
+        catchError(err => {
+          this.error$.next(err.message || "Failed to reset items");
+          return EMPTY;
+        })
+      )
+    )
   );
 
   // --- Reducers
   constructor() {
     const nextState$ = merge(
       // checklistItemsLoaded$ reducer
-      this.checklistItemsLoaded$.pipe(
-        map((checklistItems) => ({checklistItems, loaded: true}))
+      this.itemsLoaded$.pipe(
+        map(({items, checklistId}) => (
+          {checklistItems: items, loaded: true, currentChecklistId: checklistId}
+        ))
       ),
       // error$ reducer
       this.error$.pipe(map((error) => ({error})))
@@ -58,59 +169,38 @@ export class ChecklistItemService {
 
     connect(this.state)
       .with(nextState$)
-      // add$ reducer
-      .with(this.add$, (state, checklistItem) => ({
-        checklistItems: [
-          ...state.checklistItems,
-          {
-            ...checklistItem.item,
-            id: Date.now().toString(),
-            checklistId: checklistItem.checklistId,
-            checked: false
-          }
-        ]
+      // add$ reducer (itemAdded$)
+      .with(this.itemAdded$, (state, item) => ({
+        checklistItems: [...state.checklistItems, item]
       }))
-      // edit$ reducer
-      .with(this.edit$, (state, update) => ({
+      // edit$ reducer (itemEdited$)
+      .with(this.itemEdited$, (state, update) => ({
         checklistItems: state.checklistItems.map((item) =>
           item.id === update.id
-            ? {...item, title: update.data.title}
+            ? {...item, title: update.title}
             : item
         )
       }))
-      // remove$ reducer
-      .with(this.remove$, (state, id) => ({
+      // remove$ reducer 9itemRemoved$)
+      .with(this.itemRemoved$, (state, id) => ({
         checklistItems: state.checklistItems.filter((item) => item.id !== id)
       }))
-      // toggle$ reducer
-      .with(this.toggle$, (state, checklistItemId) => ({
+      // toggle$ reducer (itemToggled$)
+      .with(this.itemToggled$, (state, id) => ({
         checklistItems: state.checklistItems.map((item) =>
-          item.id === checklistItemId
+          item.id === id
             ? {...item, checked: !item.checked}
             : item
         )
       }))
-      // reset$ reducer
-      .with(this.reset$, (state, checklistId) => ({
+      // reset$ reducer (itemReset$)
+      .with(this.itemReset$, (state, checklistId) => ({
         checklistItems: state.checklistItems.map((item) =>
           item.checklistId === checklistId
             ? {...item, checked: false}
             : item
         )
-      }))
-      // checklistRemoved$ reducer
-      .with(this.checklistRemoved$, (state, checklistId) => ({
-        checklistItems: state.checklistItems.filter(
-          (item) => item.checklistId !== checklistId
-        )
       }));
-
-    // --- Effects
-    effect(() => {
-      if (this.loaded()) {
-        this.storageService.saveChecklistItems(this.checklistItems());
-      }
-    });
   }
 }
 

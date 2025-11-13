@@ -27,7 +27,7 @@ import {ChecklistItemListComponent} from './ui/checklist-item-list.component';
       />
 
       <app-checklist-item-list
-        [checklistItems]="items()"
+        [checklistItems]="checklistItemService.checklistItems()"
         (edit)="checklistItemBeingEdited.set($event)"
         (remove)="checklistItemService.remove$.next($event)"
         (toggle)="checklistItemService.toggle$.next($event)"
@@ -37,7 +37,11 @@ import {ChecklistItemListComponent} from './ui/checklist-item-list.component';
     <app-modal [isOpen]="!!checklistItemBeingEdited()">
       <ng-template>
         <app-form-modal
-          title="Create item"
+          [title]="
+            checklistItemBeingEdited()?.id
+                ? 'Edit item'
+                : 'Create item'
+          "
           [formGroup]="checklistItemForm"
           (save)="
             checklistItemBeingEdited()?.id
@@ -74,18 +78,21 @@ export default class ChecklistComponent {
       .find((checklist) => checklist.id === this.params()?.get('id'))
   );
 
-  items = computed(() =>
-    this.checklistItemService
-      .checklistItems()
-      .filter((item) => item.checklistId === this.params()?.get('id'))
-  );
-
   checklistItemForm = this.formBuilder.nonNullable.group({
     title: ['']
   });
 
   // --- Constructor
   constructor() {
+    // Trigger loading items when checklistId changes
+    effect(() => {
+      const checklistId = this.params()?.get('id');
+      if (checklistId) {
+        this.checklistItemService.checklistId$.next(checklistId);
+      }
+    });
+
+    // Reset or fill checklistItemForm
     effect(() => {
       const checklistItem = this.checklistItemBeingEdited();
       if (!checklistItem) {
