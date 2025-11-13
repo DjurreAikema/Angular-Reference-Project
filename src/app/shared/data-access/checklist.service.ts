@@ -1,9 +1,10 @@
 import {computed, inject, Injectable, signal} from '@angular/core';
 import {AddChecklist, Checklist, EditChecklist, RemoveChecklist} from '../interfaces';
-import {catchError, EMPTY, map, merge, Observable, Subject, switchMap} from 'rxjs';
+import {map, merge, Observable, Subject, switchMap} from 'rxjs';
 import {connect} from 'ngxtension/connect';
 import {HttpClient} from '@angular/common/http';
 import {ApiService} from './api.service';
+import {catchErrorWithMessage} from '../operators';
 
 export interface ChecklistsState {
   checklists: Checklist[];
@@ -48,10 +49,7 @@ export class ChecklistService {
       map(dtos => dtos.map(dto => ({
         id: dto.id, title: dto.title
       }))),
-      catchError((err) => {
-        this.error$.next(err.message || "Failed to load checklists");
-        return EMPTY;
-      })
+      catchErrorWithMessage(this.error$, "Failed to load checklists")
     );
 
   private checklistAdded$: Observable<Checklist> = this.add$.pipe(
@@ -63,10 +61,7 @@ export class ChecklistService {
         map(dto => ({
           id: dto.id, title: dto.title
         })),
-        catchError(err => {
-          this.error$.next(err.message || "Failed to add checklist");
-          return EMPTY;
-        })
+        catchErrorWithMessage(this.error$, "Failed to add checklist")
       )
     )
   );
@@ -80,10 +75,7 @@ export class ChecklistService {
         map(dto => ({
           id: dto.id, title: dto.title
         })),
-        catchError(err => {
-          this.error$.next(err.message || "Failed to edit checklist");
-          return EMPTY;
-        })
+        catchErrorWithMessage(this.error$, "Failed to edit checklist")
       )
     )
   );
@@ -94,10 +86,7 @@ export class ChecklistService {
         this._api.getUrl(`/checklists/${id}`)
       ).pipe(
         map(() => id),
-        catchError(err => {
-          this.error$.next(err.message || 'Failed to delete checklist');
-          return EMPTY;
-        })
+        catchErrorWithMessage(this.error$, "Failed to delete checklist")
       )
     )
   );

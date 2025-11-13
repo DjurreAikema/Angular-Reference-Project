@@ -1,10 +1,11 @@
 import {computed, inject, Injectable, signal} from '@angular/core';
 import {AddChecklistItem, ChecklistItem, EditChecklistItem, RemoveChecklistItem} from '../../shared/interfaces';
-import {catchError, EMPTY, map, merge, Observable, Subject, switchMap} from 'rxjs';
+import {map, merge, Observable, Subject, switchMap} from 'rxjs';
 import {RemoveChecklist} from '../../shared/interfaces';
 import {connect} from 'ngxtension/connect';
 import {HttpClient} from '@angular/common/http';
 import {ApiService} from '../../shared/data-access/api.service';
+import {catchErrorWithMessage} from '../../shared/operators';
 
 export interface ChecklistItemsState {
   checklistItems: ChecklistItem[];
@@ -66,10 +67,7 @@ export class ChecklistItemService {
           })),
           checklistId
         })),
-        catchError(err => {
-          this.error$.next(err.message || "Failed to load checklist items");
-          return EMPTY;
-        })
+        catchErrorWithMessage(this.error$, "Failed to load checklist items")
       )
     )
   );
@@ -86,10 +84,7 @@ export class ChecklistItemService {
           title: dto.title,
           checked: dto.checked
         })),
-        catchError(err => {
-          this.error$.next(err.message || "Failed to add item");
-          return EMPTY;
-        })
+        catchErrorWithMessage(this.error$, "Failed to add item")
       )
     )
   );
@@ -104,10 +99,7 @@ export class ChecklistItemService {
           id: dto.id,
           title: dto.title
         })),
-        catchError(err => {
-          this.error$.next(err.message || "Failed to edit item");
-          return EMPTY;
-        })
+        catchErrorWithMessage(this.error$, "Failed to edit item")
       )
     )
   );
@@ -118,10 +110,7 @@ export class ChecklistItemService {
         this._api.getUrl(`/items/${id}/toggle`), {}
       ).pipe(
         map(dto => dto.id),
-        catchError(err => {
-          this.error$.next(err.message || "Failed to toggle item");
-          return EMPTY;
-        })
+        catchErrorWithMessage(this.error$, "Failed to toggle item")
       )
     )
   );
@@ -132,10 +121,7 @@ export class ChecklistItemService {
         this._api.getUrl(`/items/${id}`)
       ).pipe(
         map(() => id),
-        catchError(err => {
-          this.error$.next(err.message || "Failed to delete item");
-          return EMPTY;
-        })
+        catchErrorWithMessage(this.error$, "Failed to delete item")
       )
     )
   );
@@ -146,10 +132,7 @@ export class ChecklistItemService {
         this._api.getUrl(`/checklists/${checklistId}/reset`), {}
       ).pipe(
         map(() => checklistId),
-        catchError(err => {
-          this.error$.next(err.message || "Failed to reset items");
-          return EMPTY;
-        })
+        catchErrorWithMessage(this.error$, "Failed to reset item")
       )
     )
   );
