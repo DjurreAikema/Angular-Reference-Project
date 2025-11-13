@@ -1,6 +1,6 @@
 import {computed, inject, Injectable, signal} from '@angular/core';
 import {AddChecklist, Checklist, EditChecklist, RemoveChecklist} from '../interfaces';
-import {map, merge, Observable, Subject, switchMap} from 'rxjs';
+import {map, merge, Observable, of, Subject, switchMap} from 'rxjs';
 import {connect} from 'ngxtension/connect';
 import {HttpClient} from '@angular/common/http';
 import {ApiService} from './api.service';
@@ -40,17 +40,24 @@ export class ChecklistService {
   add$ = new Subject<AddChecklist>();
   edit$ = new Subject<EditChecklist>();
   remove$ = new Subject<RemoveChecklist>();
+  refresh$ = new Subject<void>()
 
   private error$ = new Subject<string>();
 
-  private checklistsLoaded$: Observable<Checklist[]> = this._http
-    .get<ChecklistDto[]>(this._api.getUrl('/checklists'))
-    .pipe(
-      map(dtos => dtos.map(dto => ({
-        id: dto.id, title: dto.title
-      }))),
-      catchErrorWithMessage(this.error$, "Failed to load checklists")
-    );
+  private checklistsLoaded$: Observable<Checklist[]> = merge(
+    of(void 0),
+    this.refresh$
+  ).pipe(
+    switchMap(() =>
+      this._http.get<ChecklistDto[]>(this._api.getUrl('/checklists'))
+        .pipe(
+          map(dtos => dtos.map(dto => ({
+            id: dto.id, title: dto.title
+          }))),
+          catchErrorWithMessage(this.error$, "Failed to load checklists")
+        )
+    )
+  )
 
   private checklistAdded$: Observable<Checklist> = this.add$.pipe(
     switchMap(checklist =>
@@ -94,6 +101,10 @@ export class ChecklistService {
   // --- Reducers
   constructor() {
     const nextState$ = merge(
+      // refresh$ reducer
+      this.refresh$.pipe(
+        map(() => ({loaded: false}))
+      ),
       // checklistsLoaded$ reducer
       this.checklistsLoaded$.pipe(
         map((checklists) => ({checklists, loaded: true}))

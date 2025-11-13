@@ -17,6 +17,12 @@ import {ChecklistListComponent} from './ui/checklist-list.component';
     <header>
       <h1>Quicklists</h1>
       <button (click)="checklistBeingEdited.set({})">Add Checklist</button>
+      <button
+        (click)="checklistService.refresh$.next()"
+        [disabled]="!checklistService.loaded()"
+      >
+        Refresh
+      </button>
     </header>
 
     <app-modal [isOpen]="!!checklistBeingEdited()">
