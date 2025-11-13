@@ -80,7 +80,7 @@ export class ChecklistService {
     )
   );
 
-  private checklistRemoved$: Observable<string> = this.remove$.pipe(
+  private checklistRemoved$: Observable<RemoveChecklist> = this.remove$.pipe(
     switchMap(id =>
       this._http.delete(
         this._api.getUrl(`/checklists/${id}`)

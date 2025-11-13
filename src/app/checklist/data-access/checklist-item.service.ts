@@ -89,7 +89,7 @@ export class ChecklistItemService {
     )
   );
 
-  private itemEdited$: Observable<{ id: string; title: string }> = this.edit$.pipe(
+  private itemEdited$: Observable<ChecklistItem> = this.edit$.pipe(
     switchMap(update =>
       this._http.put<ChecklistItemDto>(
         this._api.getUrl(`/items/${update.id}`),
@@ -97,14 +97,16 @@ export class ChecklistItemService {
       ).pipe(
         map(dto => ({
           id: dto.id,
-          title: dto.title
+          checklistId: dto.checklistId,
+          title: dto.title,
+          checked: dto.checked
         })),
         catchErrorWithMessage(this.error$, "Failed to edit item")
       )
     )
   );
 
-  private itemToggled$: Observable<string> = this.toggle$.pipe(
+  private itemToggled$: Observable<RemoveChecklistItem> = this.toggle$.pipe(
     switchMap(id =>
       this._http.patch<ChecklistItemDto>(
         this._api.getUrl(`/items/${id}/toggle`), {}
@@ -115,7 +117,7 @@ export class ChecklistItemService {
     )
   );
 
-  private itemRemoved$: Observable<string> = this.remove$.pipe(
+  private itemRemoved$: Observable<RemoveChecklistItem> = this.remove$.pipe(
     switchMap(id =>
       this._http.delete(
         this._api.getUrl(`/items/${id}`)
@@ -126,7 +128,7 @@ export class ChecklistItemService {
     )
   );
 
-  private itemReset$: Observable<string> = this.reset$.pipe(
+  private itemReset$: Observable<RemoveChecklist> = this.reset$.pipe(
     switchMap(checklistId =>
       this._http.patch(
         this._api.getUrl(`/checklists/${checklistId}/reset`), {}
