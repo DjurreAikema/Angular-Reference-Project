@@ -21,10 +21,10 @@ export type RemoveChecklistItem = ChecklistItem['id'];
 
 // --- DTOs
 export interface ChecklistItemDto {
-  id: string;
-  checklistId: string;
-  title: string;
-  checked: boolean;
+  id: any;
+  checklistId: any;
+  title: any;
+  checked: any;
 }
 
 // --- Mappers
