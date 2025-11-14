@@ -52,8 +52,4 @@ export class ChecklistItemMapper {
     };
   }
 
-  static fromDtoToArray(dtos: ChecklistItemDto[]): ChecklistItem[] {
-    return dtos.map(dto => this.fromDto(dto));
-  }
-
 }

@@ -1,20 +1,15 @@
 import {computed, inject, Injectable, signal} from '@angular/core';
-import {AddChecklist, Checklist, EditChecklist, RemoveChecklist} from '../interfaces';
+import {AddChecklist, Checklist, ChecklistDto, ChecklistMapper, EditChecklist, RemoveChecklist} from '../interfaces';
 import {map, merge, Observable, of, Subject, switchMap} from 'rxjs';
 import {connect} from 'ngxtension/connect';
 import {HttpClient} from '@angular/common/http';
 import {ApiService} from './api.service';
-import {catchErrorWithMessage} from '../operators';
+import {catchErrorWithMessage, mapDto, mapDtoArray} from '../operators';
 
 export interface ChecklistsState {
   checklists: Checklist[];
   loaded: boolean;
   error: string | null;
-}
-
-interface ChecklistDto {
-  id: string;
-  title: string;
 }
 
 @Injectable({
@@ -51,9 +46,7 @@ export class ChecklistService {
     switchMap(() =>
       this._http.get<ChecklistDto[]>(this._api.getUrl('/checklists'))
         .pipe(
-          map(dtos => dtos.map(dto => ({
-            id: dto.id, title: dto.title
-          }))),
+          mapDtoArray(ChecklistMapper.fromDto, 'Failed to map checklist from API'),
           catchErrorWithMessage(this.error$, "Failed to load checklists")
         )
     )
@@ -65,9 +58,7 @@ export class ChecklistService {
         this._api.getUrl('/checklists'),
         {title: checklist.title}
       ).pipe(
-        map(dto => ({
-          id: dto.id, title: dto.title
-        })),
+        mapDto(ChecklistMapper.fromDto, 'Failed to map created checklist from API'),
         catchErrorWithMessage(this.error$, "Failed to add checklist")
       )
     )
@@ -79,9 +70,7 @@ export class ChecklistService {
         this._api.getUrl(`/checklists/${update.id}`),
         {title: update.data.title}
       ).pipe(
-        map(dto => ({
-          id: dto.id, title: dto.title
-        })),
+        mapDto(ChecklistMapper.fromDto, 'Failed to map edited checklist from API'),
         catchErrorWithMessage(this.error$, "Failed to edit checklist")
       )
     )

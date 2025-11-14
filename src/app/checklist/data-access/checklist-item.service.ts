@@ -1,5 +1,5 @@
 import {computed, inject, Injectable, signal} from '@angular/core';
-import {AddChecklistItem, ChecklistItem, ChecklistItemMapper, EditChecklistItem, RemoveChecklistItem} from '../../shared/interfaces';
+import {AddChecklistItem, ChecklistItem, ChecklistItemDto, ChecklistItemMapper, EditChecklistItem, RemoveChecklistItem} from '../../shared/interfaces';
 import {map, merge, Observable, Subject, switchMap} from 'rxjs';
 import {RemoveChecklist} from '../../shared/interfaces';
 import {connect} from 'ngxtension/connect';
@@ -12,13 +12,6 @@ export interface ChecklistItemsState {
   loaded: boolean;
   error: string | null;
   currentChecklistId: string | null;
-}
-
-interface ChecklistItemDto {
-  id: string;
-  checklistId: string;
-  title: string;
-  checked: boolean;
 }
 
 @Injectable({
