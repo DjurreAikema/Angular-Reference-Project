@@ -1,11 +1,11 @@
 import {computed, inject, Injectable, signal} from '@angular/core';
-import {AddChecklistItem, ChecklistItem, EditChecklistItem, RemoveChecklistItem} from '../../shared/interfaces';
+import {AddChecklistItem, ChecklistItem, ChecklistItemMapper, EditChecklistItem, RemoveChecklistItem} from '../../shared/interfaces';
 import {map, merge, Observable, Subject, switchMap} from 'rxjs';
 import {RemoveChecklist} from '../../shared/interfaces';
 import {connect} from 'ngxtension/connect';
 import {HttpClient} from '@angular/common/http';
 import {ApiService} from '../../shared/data-access/api.service';
-import {catchErrorWithMessage} from '../../shared/operators';
+import {catchErrorWithMessage, mapDto, mapDtoArray} from '../../shared/operators';
 
 export interface ChecklistItemsState {
   checklistItems: ChecklistItem[];
@@ -58,15 +58,8 @@ export class ChecklistItemService {
       this._http.get<ChecklistItemDto[]>(
         this._api.getUrl(`/checklists/${checklistId}/items`)
       ).pipe(
-        map(dtos => ({
-          items: dtos.map(dto => ({
-            id: dto.id,
-            checklistId: dto.checklistId,
-            title: dto.title,
-            checked: dto.checked
-          })),
-          checklistId
-        })),
+        mapDtoArray(ChecklistItemMapper.fromDto, 'Failed to map checklist items from API'),
+        map(items => ({items, checklistId})),
         catchErrorWithMessage(this.error$, "Failed to load checklist items")
       )
     )
@@ -78,12 +71,7 @@ export class ChecklistItemService {
         this._api.getUrl(`/checklists/${checklistId}/items`),
         {title: item.title}
       ).pipe(
-        map(dto => ({
-          id: dto.id,
-          checklistId: dto.checklistId,
-          title: dto.title,
-          checked: dto.checked
-        })),
+        mapDto(ChecklistItemMapper.fromDto, 'Failed to map created item from API'),
         catchErrorWithMessage(this.error$, "Failed to add item")
       )
     )
@@ -95,12 +83,7 @@ export class ChecklistItemService {
         this._api.getUrl(`/items/${update.id}`),
         {title: update.data.title}
       ).pipe(
-        map(dto => ({
-          id: dto.id,
-          checklistId: dto.checklistId,
-          title: dto.title,
-          checked: dto.checked
-        })),
+        mapDto(ChecklistItemMapper.fromDto, 'Failed to map updated item from API'),
         catchErrorWithMessage(this.error$, "Failed to edit item")
       )
     )
