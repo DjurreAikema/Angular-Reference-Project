@@ -8,6 +8,8 @@ export type EditChecklist = { id: Checklist['id']; data: AddChecklist };
 export type RemoveChecklist = Checklist['id'];
 
 // --- DTOs
+// Note: Fields are 'any' because we don't trust the API response yet.
+// Validation happens in the mapper.
 export interface ChecklistDto {
   id: any;
   title: any;

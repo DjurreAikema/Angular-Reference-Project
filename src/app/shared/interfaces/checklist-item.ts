@@ -40,8 +40,8 @@ export class ChecklistItemMapper {
     if (!dto.title || typeof dto.title !== 'string') {
       throw new Error('Invalid checklist item DTO: title must be a non-empty string');
     }
-    if (!dto.checked || typeof dto.checked !== 'boolean') {
-      throw new Error('Invalid checklist item DTO: checked must be a non-empty string');
+    if (typeof dto.checked !== 'boolean') {
+      throw new Error('Invalid checklist item DTO: checked must be a boolean');
     }
 
     return {
