@@ -1,6 +1,6 @@
 # QuickLists - Angular Architecture Reference
 
-A modern Angular application demonstrating production-ready architectural patterns and reactive programming practices. This project serves as a reference implementation of industry best practices, heavily inspired by [Joshua Morony's](https://www.joshuamorony.com/) signal-based reactive patterns.
+A modern Angular application demonstrating production-ready architectural patterns and reactive programming practices. This project serves as a reference implementation of industry best practices, heavily inspired by [Joshua Morony's](https://www.joshmorony.com/) signal-based reactive patterns.
 
 ## Core Architectural Principles
 
@@ -47,12 +47,12 @@ See the [state management implementation](src/app/shared/data-access/checklist.s
 State management follows the **sources → reducers → state → selectors** pattern:
 
 **Flow**:
-1. **Sources**: Observables/Subjects that bring data into the application ([example](src/app/shared/data-access/checklist.service.ts#L28-L33))
-2. **Reducers**: Subscribe to sources and update the state signal ([example](src/app/shared/data-access/checklist.service.ts#L64-L101))
-3. **State**: A single signal holding the state object ([example](src/app/shared/data-access/checklist.service.ts#L20-L24))
-4. **Selectors**: Computed signals derived from state ([example](src/app/shared/data-access/checklist.service.ts#L26-L29))
+1. **Sources**: Observables/Subjects that bring data into the application ([example](src/app/shared/data-access/checklist.service.ts#L34-L88))
+2. **Reducers**: Subscribe to sources and update the state signal ([example](src/app/shared/data-access/checklist.service.ts#L90-L124))
+3. **State**: A single signal holding the state object ([example](src/app/shared/data-access/checklist.service.ts#L22-L27))
+4. **Selectors**: Computed signals derived from state ([example](src/app/shared/data-access/checklist.service.ts#L29-L32))
 
-This approach uses [ngxtension's `connect`](https://ngxtension.netlify.app/utilities/connect/) utility to bridge RxJS observables with Angular signals, providing a clean separation between asynchronous operations and synchronous state updates.
+This approach uses ngxtension's `connect` utility to bridge RxJS observables with Angular signals, providing a clean separation between asynchronous operations and synchronous state updates.
 
 ## Project Structure
 
@@ -87,7 +87,7 @@ Shared code lives in `shared/` with the same structure.
 
 ## Credits
 
-This architecture is based on principles taught by **[Joshua Morony](https://www.joshuamorony.com/)** in his Angular courses, particularly his approach to reactive programming with signals and observables.
+This architecture is based on principles taught by **[Joshua Morony](https://www.joshmorony.com/)** in his Angular courses, particularly his approach to reactive programming with signals and observables.
 
 ## Getting Started
 
